@@ -1,0 +1,30 @@
+:root {
+    --primary-color: #E04D25;
+    --secondary-color: #10147A;
+    --background-color: #ffffff;
+    --text-color: #000000;
+  }
+  
+  [data-theme="dark"] {
+    --primary-color: #8B0000; /* Darker red */
+    --secondary-color: #0A0F45; /* Darker blue */
+    --background-color: #121212;
+    --text-color: #ffffff;
+  }
+  
+  .app-container {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .theme-toggle {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    margin: 10px;
+  }
+  

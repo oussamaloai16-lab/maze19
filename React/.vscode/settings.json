@@ -1,0 +1,11 @@
+{
+  "editor.formatOnSave": false,
+  "files.autoSave": "onFocusChange",
+  "eslint.validate": [
+    "javascript"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "css.validate": false
+}
