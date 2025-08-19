@@ -288,51 +288,53 @@ const TransactionManagement = () => {
   };
 
   // Calculate statistics if not provided by the API
-  const calculateStats = (transactionsList) => {
-    if (!transactionsList || !Array.isArray(transactionsList)) {
-      return {
-        totalTransactions: 0,
-        completedTransactions: 0,
-        pendingTransactions: 0,
-        failedTransactions: 0,
-        totalAmount: 0
-      };
+  // In TransactionManagement.js - Update the calculateStats function:
+
+const calculateStats = (transactionsList) => {
+  if (!transactionsList || !Array.isArray(transactionsList)) {
+    return {
+      totalTransactions: 0,
+      completedTransactions: 0,
+      pendingTransactions: 0,
+      failedTransactions: 0,
+      totalAmount: 0
+    };
+  }
+  
+  // Filter transactions by status
+  const completed = transactionsList.filter(tx => tx.status === 'completed');
+  const pending = transactionsList.filter(tx => tx.status === 'pending');
+  const failed = transactionsList.filter(tx => 
+    tx.status === 'failed' || tx.status === 'cancelled'
+  );
+  
+  // Calculate total amount - ONLY from completed transactions
+  let totalAmount = 0;
+  
+  completed.forEach(tx => { // Changed from transactionsList to completed
+    let parsedAmount = 0;
+    
+    if (typeof tx.amount === 'number') {
+      parsedAmount = tx.amount;
+    } else if (typeof tx.amount === 'string') {
+      // Remove currency symbols and non-numeric chars except decimal point
+      const cleaned = tx.amount.replace(/[^\d.-]/g, '');
+      parsedAmount = parseFloat(cleaned);
     }
     
-    // Filter transactions by status
-    const completed = transactionsList.filter(tx => tx.status === 'completed');
-    const pending = transactionsList.filter(tx => tx.status === 'pending');
-    const failed = transactionsList.filter(tx => 
-      tx.status === 'failed' || tx.status === 'cancelled'
-    );
-    
-    // Calculate total amount
-    let totalAmount = 0;
-    
-    transactionsList.forEach(tx => {
-      let parsedAmount = 0;
-      
-      if (typeof tx.amount === 'number') {
-        parsedAmount = tx.amount;
-      } else if (typeof tx.amount === 'string') {
-        // Remove currency symbols and non-numeric chars except decimal point
-        const cleaned = tx.amount.replace(/[^\d.-]/g, '');
-        parsedAmount = parseFloat(cleaned);
-      }
-      
-      if (!isNaN(parsedAmount)) {
-        totalAmount += parsedAmount;
-      }
-    });
-    
-    return {
-      totalTransactions: transactionsList.length,
-      completedTransactions: completed.length,
-      pendingTransactions: pending.length,
-      failedTransactions: failed.length,
-      totalAmount: totalAmount
-    };
+    if (!isNaN(parsedAmount)) {
+      totalAmount += parsedAmount;
+    }
+  });
+  
+  return {
+    totalTransactions: transactionsList.length,
+    completedTransactions: completed.length,
+    pendingTransactions: pending.length,
+    failedTransactions: failed.length,
+    totalAmount: totalAmount
   };
+};
 
   // Load users on mount
   useEffect(() => {

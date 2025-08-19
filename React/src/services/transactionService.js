@@ -260,34 +260,37 @@ async getAllTransactions(page = 1, limit = 25, filters = {}) {
         
         // Calculate stats from transactions if not provided by API
         if (result.stats.totalTransactions === 0 && result.transactions.length > 0) {
-          // Calculate stats directly from the transactions
-          const completed = result.transactions.filter(tx => tx.status === 'completed').length;
-          const pending = result.transactions.filter(tx => tx.status === 'pending').length;
-          const failed = result.transactions.filter(tx => 
-            tx.status === 'failed' || tx.status === 'cancelled'
-          ).length;
-          
-          let totalAmount = 0;
-          result.transactions.forEach(tx => {
-            if (typeof tx.amount === 'number') {
-              totalAmount += tx.amount;
-            } else if (typeof tx.amount === 'string') {
-              const cleaned = tx.amount.replace(/[^\d.-]/g, '');
-              const parsed = parseFloat(cleaned);
-              if (!isNaN(parsed)) {
-                totalAmount += parsed;
-              }
-            }
-          });
-          
-          result.stats = {
-            totalTransactions: result.transactions.length,
-            completedTransactions: completed,
-            pendingTransactions: pending,
-            failedTransactions: failed,
-            totalAmount: totalAmount
-          };
+  // Calculate stats directly from the transactions
+  const completed = result.transactions.filter(tx => tx.status === 'completed').length;
+  const pending = result.transactions.filter(tx => tx.status === 'pending').length;
+  const failed = result.transactions.filter(tx => 
+    tx.status === 'failed' || tx.status === 'cancelled'
+  ).length;
+  
+  // Calculate total amount - ONLY from completed transactions
+  let totalAmount = 0;
+  result.transactions.forEach(tx => {
+    if (tx.status === 'completed') { // Add this condition
+      if (typeof tx.amount === 'number') {
+        totalAmount += tx.amount;
+      } else if (typeof tx.amount === 'string') {
+        const cleaned = tx.amount.replace(/[^\d.-]/g, '');
+        const parsed = parseFloat(cleaned);
+        if (!isNaN(parsed)) {
+          totalAmount += parsed;
         }
+      }
+    }
+  });
+  
+  result.stats = {
+    totalTransactions: result.transactions.length,
+    completedTransactions: completed,
+    pendingTransactions: pending,
+    failedTransactions: failed,
+    totalAmount: totalAmount
+  };
+}
       }
     }
     

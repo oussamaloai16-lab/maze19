@@ -188,9 +188,11 @@ async getAllTransactions(filters = {}) {
     ).length;
     
     // Calculate total amount
-    let totalAmount = transactions.reduce((sum, tx) => {
-      return sum + (typeof tx.amount === 'number' ? tx.amount : 0);
-    }, 0);
+    let totalAmount = transactions
+      .filter(tx => tx.status === 'completed')
+      .reduce((sum, tx) => {
+        return sum + (typeof tx.amount === 'number' ? tx.amount : 0);
+      }, 0);
     
     return {
       transactions: processedTransactions,
