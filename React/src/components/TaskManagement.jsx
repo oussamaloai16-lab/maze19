@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import taskService from '../services/taskService';
+import UserService from '../services/userService';
 
 // Add custom styles for the range slider
 const customStyles = `
@@ -85,11 +86,14 @@ const TaskManagement = () => {
     assignedTo: '',
     taskType: '',
     priority: '',
-    search: ''
+    search: '',
+    clientId: '' // Add clientId filter
   });
   const [selectedTask, setSelectedTask] = useState(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [clients, setClients] = useState([]); // Add clients state
+  const [employees, setEmployees] = useState([]); // Add employees state
 
   const statusConfig = {
     pending: {
@@ -136,8 +140,71 @@ const TaskManagement = () => {
     urgent: { color: 'text-red-500', bg: 'bg-red-100' }
   };
 
+  // Fetch clients function
+  const fetchClients = async () => {
+    try {
+      const response = await UserService.getAllUsers();
+      
+      let userList = [];
+      
+      if (Array.isArray(response)) {
+        userList = response;
+      } else if (response && typeof response === 'object') {
+        if (Array.isArray(response.data)) {
+          userList = response.data;
+        } else if (response.users && Array.isArray(response.users)) {
+          userList = response.users;
+        } else if (response.results && Array.isArray(response.results)) {
+          userList = response.results;
+        }
+      }
+      
+      const clientUsers = userList.filter(user => 
+        user.role === 'CLIENT' || 
+        user.role?.toLowerCase() === 'client'
+      );
+      
+      setClients(clientUsers);
+    } catch (err) {
+      console.error('Error fetching clients:', err);
+    }
+  };
+
+  // Fetch employees function
+  const fetchEmployees = async () => {
+    try {
+      const response = await UserService.getAllUsers();
+      
+      let userList = [];
+      
+      if (Array.isArray(response)) {
+        userList = response;
+      } else if (response && typeof response === 'object') {
+        if (Array.isArray(response.data)) {
+          userList = response.data;
+        } else if (response.users && Array.isArray(response.users)) {
+          userList = response.users;
+        } else if (response.results && Array.isArray(response.results)) {
+          userList = response.results;
+        }
+      }
+      
+      const employeeUsers = userList.filter(user => 
+        user.role !== 'CLIENT' && 
+        user.role?.toLowerCase() !== 'client' &&
+        user.isActive !== false
+      );
+      
+      setEmployees(employeeUsers);
+    } catch (err) {
+      console.error('Error fetching employees:', err);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchClients();
+    fetchEmployees();
   }, [filters]);
 
   const fetchData = async () => {
@@ -302,9 +369,15 @@ const TaskManagement = () => {
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer - Updated with client info */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
+            {/* Client Info */}
+            {task.clientId && (
+                <span className={`px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800`}>
+                  Client: {task.clientId.username || task.clientId.name || task.clientId.email}
+                </span>
+              )}
             {task.assignedTo && (
               <div className="flex items-center text-xs text-gray-500">
                 <User className="w-3 h-3 mr-1" />
@@ -544,13 +617,13 @@ const TaskManagement = () => {
       {/* Stats Overview */}
       <StatsOverview />
 
-      {/* Filters */}
+      {/* Filters - Updated with client filter */}
       <div className={`mb-6 p-4 rounded-lg border ${
         theme === 'dark' 
           ? 'bg-gray-800 border-gray-700' 
           : 'bg-white border-gray-200'
       }`}>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label className={`block text-sm font-medium mb-1 ${
               theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
@@ -571,6 +644,31 @@ const TaskManagement = () => {
                 }`}
               />
             </div>
+          </div>
+
+          {/* Client Filter */}
+          <div>
+            <label className={`block text-sm font-medium mb-1 ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              Client
+            </label>
+            <select
+              value={filters.clientId}
+              onChange={(e) => setFilters({...filters, clientId: e.target.value})}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300'
+              }`}
+            >
+              <option value="">All Clients</option>
+              {clients.map(client => (
+                <option key={client._id} value={client._id}>
+                  {client.username || client.name || client.email}
+                </option>
+              ))}
+            </select>
           </div>
           
           <div>
@@ -641,7 +739,11 @@ const TaskManagement = () => {
               }`}
             >
               <option value="">All Team Members</option>
-              {/* TODO: Populate with actual team members */}
+              {employees.map(employee => (
+                <option key={employee._id} value={employee._id}>
+                  {employee.username || employee.name || employee.email}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -738,13 +840,16 @@ const TaskManagement = () => {
       )}
 
       {/* Create Task Modal */}
-      {showCreateModal && (
-        <CreateTaskModal 
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={fetchData}
-          theme={theme}
-        />
-      )}
+      {/* Create Task Modal */}
+    {showCreateModal && (
+      <CreateTaskModal 
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={fetchData}
+        theme={theme}
+        clients={clients}
+        employees={employees}
+      />
+    )}
     </div>
   );
 };
@@ -1047,29 +1152,60 @@ const TaskDetailModal = ({ task, onClose, onUpdate, theme }) => {
 };
 
 // Create Task Modal Component
-const CreateTaskModal = ({ onClose, onSuccess, theme }) => {
+const CreateTaskModal = ({ onClose, onSuccess, theme, clients = [], employees = [] }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     taskType: '',
     priority: 'medium',
     estimatedHours: '',
-    dueDate: ''
+    dueDate: '',
+    clientId: '',
+    assignedTo: '' // Add assignedTo field
   });
 
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState(null);
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const result = await taskService.createTask(formData);
-      if (result.success) {
-        toast.success('Task created successfully');
-        onSuccess();
-        onClose();
-      }
-    } catch (error) {
-      toast.error('Failed to create task');
+  e.preventDefault();
+  try {
+    setLoading(true);
+    setError(null);
+    
+    if (!formData.title.trim()) {
+      setError('Task title is required');
+      return;
     }
-  };
+    
+    if (!formData.description.trim()) {
+      setError('Description is required');
+      return;
+    }
+    
+    if (!formData.taskType) {
+      setError('Please select a task type');
+      return;
+    }
+    
+    if (!formData.clientId) {
+      setError('Please select a client');
+      return;
+    }
+
+    const result = await taskService.createTask(formData);
+    if (result.success) {
+      toast.success('Task created successfully');
+      onSuccess();
+      onClose();
+    }
+  } catch (error) {
+    setError('Failed to create task');
+    toast.error('Failed to create task');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const priorityOptions = [
     { value: 'low', label: 'Low', icon: '🟢', color: 'from-emerald-500 to-green-500', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
@@ -1176,61 +1312,120 @@ const CreateTaskModal = ({ onClose, onSuccess, theme }) => {
           </div>
 
           {/* Task Type and Priority Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div>
-              <label className={`block text-sm font-bold mb-4 ${
-                theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-              }`}>
-                Task Type *
-              </label>
-              <select
-                required
-                value={formData.taskType}
-                onChange={(e) => setFormData({...formData, taskType: e.target.value})}
-                className={`w-full px-6 py-4 rounded-2xl border-2 transition-all duration-200 focus:ring-4 focus:ring-offset-0 text-lg ${
-                  theme === 'dark'
-                    ? 'bg-gray-800/50 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-500/20'
-                    : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500/20'
-                }`}
-              >
-                <option value="">Select task type</option>
-                {taskTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.icon} {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Client Selection and Task Type Row */}
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+  {/* Client Selection */}
+  <div>
+    <label className={`block text-sm font-bold mb-4 ${
+      theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+    }`}>
+      Client *
+    </label>
+    <select
+      name="clientId"
+      required
+      value={formData.clientId}
+      onChange={(e) => setFormData({...formData, clientId: e.target.value})}
+      className={`w-full px-6 py-4 rounded-2xl border-2 transition-all duration-200 focus:ring-4 focus:ring-offset-0 text-lg ${
+        theme === 'dark'
+          ? 'bg-gray-800/50 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-500/20'
+          : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500/20'
+      }`}
+    >
+      <option value="">Select Client</option>
+      {Array.isArray(clients) && clients.map(client => (
+        <option key={client._id} value={client._id}>
+          {client.username || client.name || client.email || client._id}
+        </option>
+      ))}
+    </select>
+  </div>
 
-            <div>
-              <label className={`block text-sm font-bold mb-4 ${
-                theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
-              }`}>
-                Priority
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {priorityOptions.map((priority) => (
-                  <button
-                    key={priority.value}
-                    type="button"
-                    onClick={() => setFormData({...formData, priority: priority.value})}
-                    className={`px-4 py-4 rounded-2xl border-2 transition-all duration-200 text-sm font-bold ${
-                      formData.priority === priority.value
-                        ? `${priority.bgColor} ${priority.borderColor} shadow-lg transform scale-105`
-                        : theme === 'dark'
-                          ? 'border-gray-600 text-gray-300 hover:border-gray-500 hover:bg-gray-800/50'
-                          : 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="text-lg">{priority.icon}</span>
-                      <span>{priority.label}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
+  {/* Task Type */}
+  <div>
+    <label className={`block text-sm font-bold mb-4 ${
+      theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+    }`}>
+      Task Type *
+    </label>
+    <select
+      required
+      value={formData.taskType}
+      onChange={(e) => setFormData({...formData, taskType: e.target.value})}
+      className={`w-full px-6 py-4 rounded-2xl border-2 transition-all duration-200 focus:ring-4 focus:ring-offset-0 text-lg ${
+        theme === 'dark'
+          ? 'bg-gray-800/50 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-500/20'
+          : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500/20'
+      }`}
+    >
+      <option value="">Select task type</option>
+      {taskTypeOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.icon} {option.label}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
+
+{/* Assign To and Priority Row */}
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+  {/* Assign To Employee */}
+  <div>
+    <label className={`block text-sm font-bold mb-4 ${
+      theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+    }`}>
+      Assign To
+    </label>
+    <select
+      name="assignedTo"
+      value={formData.assignedTo}
+      onChange={(e) => setFormData({...formData, assignedTo: e.target.value})}
+      className={`w-full px-6 py-4 rounded-2xl border-2 transition-all duration-200 focus:ring-4 focus:ring-offset-0 text-lg ${
+        theme === 'dark'
+          ? 'bg-gray-800/50 border-gray-600 text-white focus:border-blue-500 focus:ring-blue-500/20'
+          : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500/20'
+      }`}
+    >
+      <option value="">Select Employee (Optional)</option>
+      {Array.isArray(employees) && employees.map(employee => (
+        <option key={employee._id} value={employee._id}>
+          {employee.username || employee.name || employee.email} ({employee.role})
+        </option>
+      ))}
+    </select>
+  </div>
+
+  {/* Priority - keep existing priority code */}
+    <div>
+      <label className={`block text-sm font-bold mb-4 ${
+        theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+      }`}>
+        Priority
+      </label>
+      <div className="grid grid-cols-2 gap-3">
+        {priorityOptions.map((priority) => (
+          <button
+            key={priority.value}
+            type="button"
+            onClick={() => setFormData({...formData, priority: priority.value})}
+            className={`px-4 py-4 rounded-2xl border-2 transition-all duration-200 text-sm font-bold ${
+              formData.priority === priority.value
+                ? `${priority.bgColor} ${priority.borderColor} shadow-lg transform scale-105`
+                : theme === 'dark'
+                  ? 'border-gray-600 text-gray-300 hover:border-gray-500 hover:bg-gray-800/50'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+            }`}
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <span className="text-lg">{priority.icon}</span>
+              <span>{priority.label}</span>
             </div>
-          </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
 
           {/* Estimated Hours and Due Date Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -1296,10 +1491,11 @@ const CreateTaskModal = ({ onClose, onSuccess, theme }) => {
             </button>
             <button
               type="submit"
-              className="flex-1 px-8 py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800 text-white font-bold text-lg rounded-2xl transition-all duration-200 transform hover:scale-[1.02] shadow-xl hover:shadow-2xl"
-            >
-              Create Task
-            </button>
+                disabled={loading}
+                className="flex-1 px-8 py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800 text-white font-bold text-lg rounded-2xl transition-all duration-200 transform hover:scale-[1.02] shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Creating...' : 'Create Task'}
+              </button>
           </div>
         </form>
       </div>

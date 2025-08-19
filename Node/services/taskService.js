@@ -2,13 +2,10 @@
 import Task from '../models/taskModel.js';
 import Service from '../models/Service.js';
 import User from '../models/userModel.js';
-import NotificationService from './notificationService.js';
 
 export class TaskService {
-  constructor() {
-    this.notificationService = new NotificationService();
-  }
-
+  // Remove constructor - no notification service needed
+  
   // Service to Task Type Mapping
   getTaskTypeFromService(serviceName) {
     const serviceTaskMap = {
@@ -138,9 +135,6 @@ export class TaskService {
 
       const task = await this.createTask(taskData);
       
-      // Update service with task reference if needed
-      // You might want to add a tasks array to the Service model
-      
       return task;
     } catch (error) {
       throw new Error(`Error creating tasks from service: ${error.message}`);
@@ -192,11 +186,6 @@ export class TaskService {
       });
       
       await task.save();
-      
-      // Send notifications
-      if (task.assignedTo) {
-        await this.notificationService.sendTaskAssignment(task);
-      }
       
       return await Task.findById(task._id)
         .populate('assignedTo', 'username email')
@@ -329,9 +318,6 @@ export class TaskService {
 
       await task.save();
       
-      // Send notifications
-      await this.notificationService.sendTaskStatusUpdate(task, oldStatus);
-      
       return await this.getTaskById(taskId);
     } catch (error) {
       throw new Error(`Error updating task status: ${error.message}`);
@@ -358,12 +344,6 @@ export class TaskService {
 
       await task.save();
       
-      // Send notifications
-      if (oldAssignee) {
-        await this.notificationService.sendTaskUnassignment(task, oldAssignee);
-      }
-      await this.notificationService.sendTaskAssignment(task);
-      
       return await this.getTaskById(taskId);
     } catch (error) {
       throw new Error(`Error assigning task: ${error.message}`);
@@ -385,11 +365,6 @@ export class TaskService {
       });
 
       await task.save();
-      
-      // Send notifications for non-internal comments
-      if (!isInternal) {
-        await this.notificationService.sendTaskComment(task, content);
-      }
       
       return await this.getTaskById(taskId);
     } catch (error) {
@@ -418,7 +393,6 @@ export class TaskService {
       }
 
       await task.save();
-      await this.notificationService.sendRevisionRequest(task);
       return await this.getTaskById(taskId);
     } catch (error) {
       throw new Error(`Error adding revision note: ${error.message}`);
@@ -492,7 +466,6 @@ export class TaskService {
       }
 
       await task.save();
-      await this.notificationService.sendDeliverableUpload(task);
       return await this.getTaskById(taskId);
     } catch (error) {
       throw new Error(`Error adding deliverable: ${error.message}`);

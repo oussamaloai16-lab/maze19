@@ -133,7 +133,7 @@ const LandingPage = () => {
     { value: "400%", label: "Average Sales Boost", icon: <TrendingUp className="w-8 h-8" /> },
     { value: "500+", label: "Happy Clients", icon: <Users className="w-8 h-8" /> },
     { value: "24hr", label: "Quick Delivery", icon: <Zap className="w-8 h-8" /> },
-    { value: "Tipaza", label: "Based in Algeria", icon: <MapPin className="w-8 h-8" /> }
+    { value: "Eulma", label: "Based in Algeria", icon: <MapPin className="w-8 h-8" /> }
   ];
 
   const services = {
@@ -903,7 +903,7 @@ const LandingPage = () => {
                 </h3>
               </div>
               <p className={`text-lg mb-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                Professional business services from Tipaza, Algeria. Photography, advertising, videos, and complete digital solutions.
+                Professional business services from Eulma, Algeria. Photography, advertising, videos, and complete digital solutions.
               </p>
               <div className="flex space-x-4">
                 <button 
@@ -960,7 +960,7 @@ const LandingPage = () => {
                 <div className="flex items-center gap-3">
                   <MapPin className="w-5 h-5 text-purple-500" />
                   <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>
-                    HFQ8+J7Q, Tipaza 42000, Algeria
+                    HFQ8+J7Q, Eulma 42000, Algeria
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
